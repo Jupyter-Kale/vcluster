@@ -1,0 +1,95 @@
+FROM ubuntu:xenial
+
+# System packages
+RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+    build-essential \
+    software-properties-common \
+    ca-certificates \
+    sudo \
+    supervisor \
+    wget \
+    openssh-client \
+    openssh-server \
+    libopenmpi-dev \
+    lammps \
+    mpich libmpich-dev \
+    slurm-wlm \
+    torque-client \
+    torque-mom
+
+# lammps implicitly installs openmpi and is set as the default for mpirun
+#RUN update-alternatives --set mpirun /usr/bin/mpirun.mpich
+
+# Configure sshd
+RUN mkdir /var/run/sshd \
+ && sed -i "s/#PasswordAuthentication.*/PasswordAuthentication no/g" /etc/ssh/sshd_config \
+ && sed -i "s/#PermitRootLogin.*/PermitRootLogin no/g" /etc/ssh/sshd_config \
+ && sed -i "s/#AuthorizedKeysFile/AuthorizedKeysFile/g" /etc/ssh/sshd_config
+
+# set up mpi hosts file
+#ENV HYDRA_HOST_FILE /etc/opt/hosts
+#RUN echo "export HYDRA_HOST_FILE=${HYDRA_HOST_FILE}" >> /etc/profile
+#RUN touch ${HYDRA_HOST_FILE}
+
+# Create jovyan user
+RUN adduser --ingroup users --disabled-password --gecos '' jovyan
+RUN passwd -u jovyan
+RUN mkdir -p /home/jovyan/.ssh
+RUN echo "StrictHostKeyChecking no" > /home/jovyan/.ssh/config
+COPY ssh/ /home/jovyan/.ssh/
+RUN cat /home/jovyan/.ssh/*.pub >> /home/jovyan/.ssh/authorized_keys
+RUN chown jovyan:users /home/jovyan/.ssh/*
+
+# Create ubuntu user with sudo
+RUN adduser --ingroup users --disabled-password --gecos '' ubuntu \
+ && adduser ubuntu sudo \
+ && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER ubuntu
+
+# configure ssh for user ubuntu
+RUN sudo passwd -u ubuntu
+ENV USER_SSH /home/ubuntu/.ssh
+RUN mkdir -p ${USER_SSH}
+RUN echo "StrictHostKeyChecking no" > ${USER_SSH}/config
+
+COPY ssh/ ${USER_SSH}/
+RUN cat ${USER_SSH}/*.pub >> ${USER_SSH}/authorized_keys
+RUN sudo chown ubuntu:users ${USER_SSH}/*
+
+# make sure mpi hosts file is owned by ubuntu user
+#RUN sudo chown ubuntu:users ${HYDRA_HOST_FILE}
+
+# Install miniconda3
+RUN cd /tmp \
+ && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+ && sudo bash Miniconda3-latest-Linux-x86_64.sh -p /usr/local/miniconda -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh
+ENV PATH=/usr/local/miniconda/bin:${PATH}
+
+# Install python 3 packages
+RUN sudo /usr/local/miniconda/bin/pip install \
+    mpi4py \
+    ipython \
+    Fireworks \
+    requests \
+    docker-py \
+    pymatgen \
+    pymatgen-lammps
+
+#ENV MPIEXEC_PORT_RANGE 10000:10000
+#EXPOSE 22 10000
+EXPOSE 22
+
+# copy in setup files
+COPY worker/detect_nodes.conf /etc/supervisor/conf.d/detect_nodes.conf
+COPY worker/detect_nodes.py /usr/local/bin/detect_nodes.py
+COPY worker/init_torque.sh /usr/local/bin/init_torque.sh
+COPY worker/slurm.conf /etc/slurm-llnl/slurm.conf
+RUN sudo chmod +x /usr/local/bin/detect_nodes.py
+RUN sudo mkdir /var/spool/slurm
+RUN sudo chmod a+w /var/spool/slurm/.
+
+# setup fireworks config
+COPY fireworks/my_launchpad.yaml /usr/local/miniconda/lib/python3.6/site-packages/my_launchpad.yaml
+
+CMD ["sh", "-c", "sudo /usr/bin/supervisord -n"]

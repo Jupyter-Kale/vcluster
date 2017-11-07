@@ -1,0 +1,18 @@
+FROM ubuntu:xenial
+
+RUN apt-get update -y && apt-get upgrade -y && apt-get install -y \
+    build-essential \
+    python-pip \
+    openssh-client
+
+RUN pip install Fireworks
+RUN pip install paramiko
+RUN pip install fabric
+RUN pip install requests
+
+COPY fireworks/init.sh /tmp/init.sh
+COPY fireworks/my_launchpad.yaml /usr/local/lib/python2.7/dist-packages/my_launchpad.yaml
+
+CMD ["sh", "-c", "/tmp/init.sh"]
+
+EXPOSE 5000

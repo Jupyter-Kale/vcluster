@@ -1,0 +1,20 @@
+FROM ubuntu:xenial
+
+RUN apt-get update && apt-get install -y \
+    supervisor \
+    python-pip \
+    torque-server \
+    torque-pam
+
+RUN yes | pbs_server -t create
+RUN echo torque > /etc/torque/server_name \
+ && echo torque > /var/spool/torque/server_priv/acl_svr/acl_hosts \
+ && echo root@torque > /var/spool/torque/server_priv/acl_svr/operators \
+ && echo root@torque > /var/spool/torque/server_priv/acl_svr/managers
+
+RUN pip install docker-py
+COPY torque/init.sh /usr/local/bin/init.sh
+COPY torque/detect_nodes.py /usr/local/bin/detect_nodes.py
+COPY torque/detect_nodes.conf /etc/supervisor/conf.d/detect_nodes.conf
+
+CMD ["sh", "-c", "/usr/bin/supervisord -n"]

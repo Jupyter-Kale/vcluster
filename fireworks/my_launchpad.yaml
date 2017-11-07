@@ -1,0 +1,9 @@
+host: mongodb
+logdir: null
+name: fireworks
+password: null
+port: 27017
+strm_lvl: INFO
+user_indices: []
+username: null
+wf_user_indices: []
