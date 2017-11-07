@@ -13,42 +13,29 @@ Containers
 
 ## Quickstart
 ### Bringing up the virtual cluster
-'''
-# generate the ssh keys used for connecting machines in the cluster
-python gen_sshkeys.py
-# build the docker images
-docker-compose build
-# start the containers
-docker-compose up -d
-'''
+    # generate the ssh keys used for connecting machines in the cluster
+    python gen_sshkeys.py
+    # build the docker images
+    docker-compose build
+    # start the containers
+    docker-compose up -d
 ### Shutting down the virtual cluster
-'''
-docker-compose down
-'''
+    docker-compose down
 ### Specifying number of workers (default is 4)
-'''
-# shut down before changing number of workers, will not be dynamically detected and handled by the cluster
-docker-compose up --scale worker=4 -d
-'''
+    # shut down before changing number of workers, will not be dynamically detected and handled by the cluster
+    docker-compose up --scale worker=4 -d
 ### Accessing the Jupyter Notebook Server
-http://localhost:18888
-
+    http://localhost:18888
 ### Accessing the Jupyter container directly
-docker-compose exec jupyter bash
-
+    docker-compose exec jupyter bash
 ### Using local kale development files
-'''
-export KALE_SRC=<full_path/to/your/git/clone>
-docker-compose up -d
-docker-compose exec jupyter bash
-'''
-'''
-cd /opt/kale
-pip install -e .
-# OR after each code update
-pip install . -U
-'''
+    export KALE_SRC=<full_path/to/your/git/clone>
+    docker-compose up -d
+    docker-compose exec jupyter bash
+    
+    cd /opt/kale
+    pip install -e .
+    # OR after each code update
+    pip install . -U
 ### Accessing a worker directly (specify index when multiple workers running)
-'''
-docker-compose exec --index=1 worker bash
-'''
+    docker-compose exec --index=1 worker bash
