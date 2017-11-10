@@ -15,7 +15,7 @@ RUN chown -R jovyan /home/jovyan/.ssh/
 # configure jupyter
 RUN mkdir /home/jovyan/.jupyter
 COPY jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/jupyter_notebook_config.py
-RUN chown -R jovyan /home/jovyan/.jupyter/jupyter_notebook_config.py
+RUN chown -R jovyan /home/jovyan/.jupyter
 RUN jupyter nbextension enable --py widgetsnbextension
 RUN pip install bqplot
 RUN jupyter nbextension enable --py --sys-prefix bqplot
@@ -28,4 +28,4 @@ USER jovyan
 # install default kale package
 RUN git clone https://github.com/Jupyter-Kale/kale
 RUN cd kale && git checkout 83398b1 && pip install .
-RUN cp -R ~/kale/examples ~/work/examples
+RUN cp -R /home/jovyan/kale/examples /home/jovyan/work/examples
