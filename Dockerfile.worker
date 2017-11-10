@@ -72,7 +72,7 @@ RUN sudo /usr/local/miniconda/bin/pip install \
     ipython \
     Fireworks \
     requests \
-    docker-py \
+    docker \
     pymatgen \
     pymatgen-lammps
 

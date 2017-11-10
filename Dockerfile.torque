@@ -12,7 +12,7 @@ RUN echo torque > /etc/torque/server_name \
  && echo root@torque > /var/spool/torque/server_priv/acl_svr/operators \
  && echo root@torque > /var/spool/torque/server_priv/acl_svr/managers
 
-RUN pip install docker-py
+RUN pip install docker
 COPY torque/init.sh /usr/local/bin/init.sh
 COPY torque/detect_nodes.py /usr/local/bin/detect_nodes.py
 COPY torque/detect_nodes.conf /etc/supervisor/conf.d/detect_nodes.conf
