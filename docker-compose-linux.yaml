@@ -1,0 +1,85 @@
+version: '2.3'
+services:
+    registry:
+        image: registry
+        hostname: registry
+        expose:
+            - "5000"
+        ports:
+            - "15000:5000"
+    worker:
+        scale: 4
+        build:
+            context: .
+            dockerfile: Dockerfile.worker
+        image: localhost:15000/worker:latest
+        depends_on:
+            - "registry"
+        ports:
+            - "15000-15004"
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./scratch:/tmp/scratch
+        ulimits:
+            mem_lock: -1
+        cpus: 0.02
+        mem_limit: 100m
+        memswap_limit: 1000m
+#    job_service:
+#        image: ubuntu:xenial
+#        hostname: job_service
+#        depends_on:
+#            - "worker"
+    slurm:
+        build:
+            context: .
+            dockerfile: Dockerfile.slurm
+        image: localhost:15000/slurm:latest
+        hostname: slurm 
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        depends_on:
+            - "worker"
+    torque:
+        build: 
+            context: .
+            dockerfile: Dockerfile.torque
+        image: localhost:15000/torque:latest
+        hostname: torque 
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./scratch:/tmp/scratch
+        ports:
+            - "15000-15004"
+        depends_on:
+            - "worker"
+    fireworks:
+        build:
+            context: .
+            dockerfile: Dockerfile.fireworks
+        image: localhost:15000/fireworks:latest
+        hostname: fireworks
+        depends_on:
+            - "worker"
+            - "mongodb"
+    mongodb:
+        image: mongo
+        hostname: mongodb
+        expose:
+            - "27017"
+        ports:
+            - "27017:27017"
+    jupyter:
+        build:
+            context: .
+            dockerfile: Dockerfile.jupyter
+        image: localhost:15000/jupyter:latest
+        hostname: jupyter
+        volumes:
+            - ./scratch:/tmp/scratch
+            - ./notebooks:/home/jovyan/work
+            - ${KALE_SRC}:/opt/kale
+        ports:
+            - "18888:8888"
+        depends_on:
+            - "worker"
