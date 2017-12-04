@@ -23,6 +23,8 @@ services:
         cpus: 0.02
         mem_limit: 100m
         memswap_limit: 1000m
+        ulimits:
+            memlock: -1
 #    job_service:
 #        image: ubuntu:xenial
 #        hostname: job_service
