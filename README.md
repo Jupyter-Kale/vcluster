@@ -12,20 +12,13 @@ Containers
 - Fireworks
 
 ## Quickstart
-### Bringing up the virtual cluster under OS X
+### Bringing up the virtual cluster
     # generate the ssh keys used for connecting machines in the cluster
     python gen_sshkeys.py
     # build the docker images
     docker-compose build
     # start the containers
     docker-compose up -d
-### Bringing up the virtual cluster under Linux
-    # generate the ssh keys used for connecting machines in the cluster
-    python gen_sshkeys.py
-    # build the docker images
-    docker-compose -f docker-compose.yaml -f docker-compose-linux.yaml build
-    # start the containers
-    docker-compose -f docker-compose.yaml -f docker-compose-linux.yaml up -d
 ### Shutting down the virtual cluster
     docker-compose down
 ### Specifying number of workers (default is 4)
