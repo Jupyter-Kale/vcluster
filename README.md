@@ -3,7 +3,6 @@
 This is a docker compose virtual cluster for Kale dev/test scenarios where we want to simulate an HPC environment.
 
 Containers
-- Docker registry for local images
 - Jupyter Notebook Server (using Jupyter docker scipy-notebook base image)
 - Workers (scale up/down with docker-compose command)
 - Torque (MOM daemons run on workers)
