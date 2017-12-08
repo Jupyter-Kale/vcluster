@@ -12,6 +12,8 @@ Containers
 
 ## Quickstart
 ### Bringing up the virtual cluster
+    # install requirements
+    pip install -r requirements.txt
     # generate the ssh keys used for connecting machines in the cluster
     python gen_sshkeys.py
     # build the docker images
