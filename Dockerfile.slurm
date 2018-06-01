@@ -1,6 +1,9 @@
 FROM ubuntu:xenial
 
-RUN apt-get update && apt-get install -y \
+USER root
+
+RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update && apt-get install -y \
     supervisor \
     python-pip \
     munge \
