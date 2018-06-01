@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import socket
 import docker
 
 def main():
@@ -25,9 +26,9 @@ def main():
         hostname = "{}_{}_{}".format(project,'worker',number)
         hostnames.append(hostname)
 
-    with open('/etc/hosts', 'a') as torque_hosts:
-        for h in hostnames:
-            torque_hosts.write("{}\n".format(h))
+    #with open('/etc/hosts', 'a') as torque_hosts:
+    #    for h in hostnames:
+    #        torque_hosts.write("{}\t{}.vcluster_default\n".format(socket.gethostbyname(h),h))
 
     with open('/var/spool/torque/server_priv/nodes', 'w') as torque_nodes_file:
         for h in hostnames[1:]:

@@ -1,6 +1,13 @@
 FROM ubuntu:xenial
 
-RUN apt-get update && apt-get install -y \
+USER root
+
+# Create jovyan user
+RUN adduser --ingroup users --disabled-password --gecos '' jovyan
+RUN passwd -u jovyan
+
+RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update && apt-get install -y \
     supervisor \
     python-pip \
     torque-server \

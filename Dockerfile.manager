@@ -13,27 +13,16 @@ RUN DEBIAN_FRONTEND=noninteractive \
     wget \
     openssh-client \
     openssh-server \
-    libopenmpi-dev \
-    lammps \
-    mpich libmpich-dev \
     slurm-wlm \
     torque-client \
     torque-mom \
     git
 
-# lammps implicitly installs openmpi and is set as the default for mpirun
-#RUN update-alternatives --set mpirun /usr/bin/mpirun.mpich
-
 # Configure sshd
-RUN mkdir -p /var/run/sshd \
+RUN mkdir /var/run/sshd \
  && sed -i "s/#PasswordAuthentication.*/PasswordAuthentication no/g" /etc/ssh/sshd_config \
  && sed -i "s/#PermitRootLogin.*/PermitRootLogin no/g" /etc/ssh/sshd_config \
  && sed -i "s/#AuthorizedKeysFile/AuthorizedKeysFile/g" /etc/ssh/sshd_config
-
-# set up mpi hosts file
-#ENV HYDRA_HOST_FILE /etc/opt/hosts
-#RUN echo "export HYDRA_HOST_FILE=${HYDRA_HOST_FILE}" >> /etc/profile
-#RUN touch ${HYDRA_HOST_FILE}
 
 # Create jovyan user
 RUN adduser --ingroup users --disabled-password --gecos '' jovyan \
@@ -48,9 +37,6 @@ RUN chown -R jovyan:users /home/jovyan/
 
 USER jovyan
 
-# make sure mpi hosts file is owned by ubuntu user
-#RUN sudo chown jovyan:users ${HYDRA_HOST_FILE}
-
 # Install miniconda3
 RUN cd /tmp \
  && wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
@@ -60,38 +46,12 @@ ENV PATH=/usr/local/miniconda/bin:${PATH}
 
 RUN sudo chown -R jovyan:users /usr/local/miniconda
 
-# Install python 3 packages
-RUN pip install \
-    mpi4py \
-    ipython \
-    ipyparallel \
-    Fireworks \
-    requests \
-    docker \
-    pymatgen \
-    pymatgen-lammps \
-    tensorflow \
-    keras \
-    horovod
-
-RUN pip install http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
-RUN pip install torchvision
-
-#ENV MPIEXEC_PORT_RANGE 10000:10000
-#EXPOSE 22 10000
 EXPOSE 22
 
-# copy in setup files
-COPY worker/.profile /home/jovyan/.profile
-COPY worker/detect_nodes.conf /etc/supervisor/conf.d/detect_nodes.conf
-COPY worker/detect_nodes.py /usr/local/bin/detect_nodes.py
-COPY worker/init_torque.sh /usr/local/bin/init_torque.sh
-COPY worker/slurm.conf /etc/slurm-llnl/slurm.conf
-RUN sudo mkdir /var/spool/slurm
-RUN sudo chmod a+w /var/spool/slurm/.
-
-# setup fireworks config
-COPY fireworks/my_launchpad.yaml /usr/local/miniconda/lib/python3.6/site-packages/my_launchpad.yaml
+# supervisor config to start sshd and kale manager
+COPY manager/start.conf /etc/supervisor/conf.d/start.conf
+COPY manager/start_manager.py /usr/local/bin/start_manager.py
+COPY manager/init.sh /usr/local/bin/init.sh
 
 # install either latest stable kale or local dev version if $KALE_SRC
 COPY worker/install_kale.sh /usr/local/bin/install_kale.sh

@@ -1,8 +1,18 @@
 FROM jupyter/scipy-notebook
 
 USER root
+
 # install and configure torque client
-RUN apt-get update -y && apt-get install -y torque-client graphviz supervisor
+RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update -y && apt-get install -y \
+    openssh-server \
+    torque-client \
+    graphviz \
+    supervisor \
+    iputils-ping \
+    nano \
+    dnsutils \
+    libopenmpi-dev
 RUN echo "torque" > /var/spool/torque/server_name
 
 # setup ssh
@@ -12,20 +22,45 @@ COPY ssh/ /home/jovyan/.ssh/
 RUN cat /home/jovyan/.ssh/*.pub >> /home/jovyan/.ssh/authorized_keys
 RUN chown -R jovyan /home/jovyan/.ssh/
 
+# Configure sshd
+RUN mkdir -p /var/run/sshd \
+ && sed -i "s/#PasswordAuthentication.*/PasswordAuthentication no/g" /etc/ssh/sshd_config \
+ && sed -i "s/#PermitRootLogin.*/PermitRootLogin no/g" /etc/ssh/sshd_config \
+ && sed -i "s/#AuthorizedKeysFile/AuthorizedKeysFile/g" /etc/ssh/sshd_config
+
 # configure jupyter
 RUN mkdir /home/jovyan/.jupyter
 COPY jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/jupyter_notebook_config.py
 RUN chown -R jovyan /home/jovyan/.jupyter
 RUN jupyter nbextension enable --py widgetsnbextension
-RUN pip install bqplot
+RUN pip install bqplot ipyparallel ipyvolume qgrid
 RUN jupyter nbextension enable --py --sys-prefix bqplot
+RUN jupyter nbextension enable --py --sys-prefix qgrid
+RUN ipcluster nbextension enable
+RUN chown -R jovyan /home/jovyan/.ipython
+
+# add more dependencies for DL
+RUN pip install keras tensorflow horovod
+RUN pip install http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
+RUN pip install torchvision
 
 # configure fireworks
 COPY fireworks/my_launchpad.yaml /opt/conda/lib/python3.6/site-packages/my_launchpad.yaml
 
+# add sudo
+RUN echo "jovyan ALL=(ALL) NOPASSWD:ALL" | tee -a /etc/sudoers
+
 USER jovyan
 
-# install default kale package
-RUN git clone https://github.com/Jupyter-Kale/kale
-RUN cd kale && git checkout 83398b1 && pip install .
-RUN cp -R /home/jovyan/kale/examples /home/jovyan/work/examples
+COPY jupyter/.profile /home/jovyan/.profile
+COPY jupyter/install_kale.sh /usr/local/bin/install_kale.sh
+
+USER root
+
+# configure supervisor to start sshd and jupyter
+COPY jupyter/start.conf /etc/supervisor/conf.d/start.conf
+
+ENTRYPOINT []
+CMD ["sh", "-c", "/usr/bin/supervisord -n"]
+
+EXPOSE 22

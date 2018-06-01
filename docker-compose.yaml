@@ -6,21 +6,25 @@ services:
             context: .
             dockerfile: Dockerfile.worker
         image: worker:latest
-        ports:
-            - "15000-15004"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./scratch:/tmp/scratch
-        cpus: 0.02
-        mem_limit: 100m
+            - ${KALE_SRC}:/opt/kale
+        cpus: 0.2
+        mem_limit: 500m
         memswap_limit: 1000m
         ulimits:
             memlock: -1
-#    job_service:
-#        image: ubuntu:xenial
-#        hostname: job_service
-#        depends_on:
-#            - "worker"
+    kale_manager:
+        build:
+            context: .
+            dockerfile: Dockerfile.manager
+        image: manager:latest
+        volumes:
+            - ${KALE_SRC}:/opt/kale
+        hostname: kale_manager
+        depends_on:
+            - "worker"
     slurm:
         build:
             context: .
@@ -40,8 +44,6 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock:ro
             - ./scratch:/tmp/scratch
-        ports:
-            - "15000-15004"
         depends_on:
             - "worker"
     fireworks:
@@ -50,6 +52,8 @@ services:
             dockerfile: Dockerfile.fireworks
         image: fireworks:latest
         hostname: fireworks
+#        ports:
+#            - "55000:5000"
         depends_on:
             - "worker"
             - "mongodb"
